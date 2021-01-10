@@ -1,0 +1,67 @@
+---
+- hosts: freebsd
+  gather_facts: no
+  tasks:
+  - name: Initialize FreeBSD guests
+    raw: sudo pkg install -y python37 # noqa 301
+
+- hosts: centos
+  tasks:
+  - name: EPEL is installed
+    package:
+      name: epel-release
+    become: yes
+
+- hosts: all
+  tasks:
+  - name: Discover Service Manager
+    group_by:
+      key: service_mgr_{{ ansible_facts['service_mgr'] }}
+- hosts: service_mgr_systemd
+  tasks:
+  - name: Dummy service is installed
+    copy:
+      src: files/borgmatic-dummy.service
+      dest: /etc/systemd/system/
+    become: yes
+  - name: reload systemd
+    systemd:
+      daemon_reload: yes
+    become: yes
+
+- hosts: all
+  roles:
+  - role: ../../.
+    vars:
+      borgmatic_config:
+        location:
+          repositories:
+          - /var/borgmatic_test
+          source_directories:
+          - /etc
+          - /home
+        storage:
+          encryption_passphrase: borgmatic_test
+          # !WARNING! If you want to change the SSH command, make sure to include the path to
+          # the borgmatic SSH key as shown below, else creating backups on remote hosts might fail
+          ssh_command: 'ssh -i {{ borgmatic_sshkey_dir }}/id_rsa'
+        retention:
+          keep_daily: 7
+          keep_weekly: 4
+          keep_monthly: 6
+      # Backup now so that we van verify everything works
+      borgmatic_backup_now: yes
+      # Used to ensure that the unit templating is working
+      borgmatic_required_systemd_units: ["borgmatic-dummy.service"]
+    become: yes
+  post_tasks:
+    - name: Check for created backup
+      command: /root/.local/bin/borgmatic list --json
+      register: borgmatic_backup_list
+      become: yes
+      check_mode: no
+      changed_when: yes
+    - name: Ensure that backup was created
+      assert:
+        that: (borgmatic_backup_list.stdout | from_json).0.archives | length > 0
+        fail_msg: Failed to create backup!

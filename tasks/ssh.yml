@@ -1,0 +1,14 @@
+- name: borgmatic SSH key path exists
+  file:
+    path: '{{ borgmatic_sshkey_dir }}'
+    owner: root
+    group: '{{ root_group[ansible_system] }}'
+    mode: 0600
+    state: directory
+
+- name: borgmatic SSH keys exist
+  openssh_keypair:
+    path: '{{ borgmatic_sshkey_dir }}/id_rsa'
+    owner: root
+    group: '{{ root_group[ansible_system] }}'
+    mode: 0600

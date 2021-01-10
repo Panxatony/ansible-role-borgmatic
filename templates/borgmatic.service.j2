@@ -1,0 +1,26 @@
+[Unit]
+Description=borgmatic backup
+Wants=network-online.target
+After=network-online.target
+
+{% for unit in borgmatic_required_systemd_units | default([]) %}
+Requires={{ unit }}
+After={{ unit }}
+{% endfor %}
+
+[Service]
+Type=oneshot
+
+# Lower CPU and I/O priority.
+Nice=19
+CPUSchedulingPolicy=batch
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+IOWeight=100
+
+Restart=no
+
+# Delay start to prevent backups running during boot. Note that systemd-inhibit requires dbus and
+# dbus-user-session to be installed.
+ExecStartPre=/root/.local/bin/borgmatic --syslog-verbosity 1 -c "{{ borgmatic_config_dir }}/config.yaml" init --encryption {{ borgmatic_encryption_mode }}
+ExecStart=/root/.local/bin/borgmatic --syslog-verbosity 1 -c "{{ borgmatic_config_dir }}/config.yaml"
