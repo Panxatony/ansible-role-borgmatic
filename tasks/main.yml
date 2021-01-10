@@ -1,0 +1,3 @@
+- include: install.yml
+- include: ssh.yml
+- include: config.yml

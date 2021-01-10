@@ -1,0 +1,9 @@
+[Unit]
+Description=Run configured borgmatic backup
+
+[Timer]
+OnCalendar={{ borgmatic_schedule_linux }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

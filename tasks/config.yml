@@ -1,0 +1,75 @@
+- name: configuration directory exists
+  file:
+    path: '{{ borgmatic_config_dir }}'
+    owner: root
+    group: '{{ root_group[ansible_system] }}'
+    mode: 0750
+    state: directory
+
+- name: Configuration is installed
+  copy:
+    content: '{{ borgmatic_config | to_nice_yaml }}'
+    dest: '{{ borgmatic_config_dir }}/config.yaml'
+    owner: root
+    group: '{{ root_group[ansible_system] }}'
+    mode: 0600
+
+- name: Verify configuration file
+  command: /root/.local/bin/validate-borgmatic-config -c '{{ borgmatic_config_dir }}/config.yaml'
+  changed_when: no
+
+- block:
+  - name: Systemd unit and timer are installed
+    template:
+      src: '{{ item }}'
+      dest: '/etc/systemd/system/{{ item | regex_replace(".j2","") }}'
+    loop:
+      - borgmatic.service.j2
+      - borgmatic.timer.j2
+  - name: Systemd timer is enabled
+    systemd:
+      name: borgmatic.timer
+      enabled: yes
+      state: started
+      daemon_reload: yes
+  - name: Run backup task
+    systemd:
+      name: borgmatic.service
+      state: started
+    when: borgmatic_backup_now
+  when: ansible_system == "Linux"
+
+- block:
+  - name: Cronvars are set
+    cronvar:
+      cron_file: borgmatic
+      name: '{{ item.name }}'
+      value: '{{ item.value }}'
+    loop:
+    - name: SHELL
+      value: /bin/sh
+    - name: PATH
+      value: /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/.local/bin
+  - name: Crontab file is installed
+    cron:
+      cron_file: borgmatic
+      user: root
+      name: borgmatic backup
+      job: >
+        borgmatic --syslog-verbosity 1 -c "{{ borgmatic_config_dir }}/config.yaml" init --encryption {{ borgmatic_encryption_mode }} &&
+        borgmatic --syslog-verbosity 1 -c "{{ borgmatic_config_dir }}/config.yaml"
+      minute: '{{ borgmatic_schedule_freebsd.minute }}'
+      hour: '{{ borgmatic_schedule_freebsd.hour }}'
+      day: '{{ borgmatic_schedule_freebsd.day }}'
+      weekday: '{{ borgmatic_schedule_freebsd.weekday }}'
+      month: '{{ borgmatic_schedule_freebsd.month }}'
+  - name: Run backup task [FreeBSD]
+    environment:
+      PATH: /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/.local/bin
+    shell: >
+      borgmatic --syslog-verbosity 1 -c "{{ borgmatic_config_dir }}/config.yaml" init --encryption {{ borgmatic_encryption_mode }} &&
+      borgmatic --syslog-verbosity 1 -c "{{ borgmatic_config_dir }}/config.yaml"
+    args:
+      executable: /bin/sh
+    when: borgmatic_backup_now
+  when: ansible_os_family == "FreeBSD"

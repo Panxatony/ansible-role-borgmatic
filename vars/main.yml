@@ -1,0 +1,38 @@
+---
+# vars file for borgmatic_client
+borgmatic_borg_package:
+  FreeBSD: py37-borgbackup
+  RedHat: borgbackup
+  Archlinux: borgbackup
+  Suse: borgbackup
+
+borgmatic_pip_package:
+  FreeBSD: py37-pip
+  RedHat: python3-pip
+  Archlinux: python-pip
+  Suse: python3-pip
+
+borgmatic_pip_executable:
+  FreeBSD: pip
+  Debian: pip3
+  Archlinux: pip
+  RedHat: pip3
+  Suse: pip3
+
+borgmatic_setuptools_package:
+  3:
+    FreeBSD: py37-setuptools
+    Debian: python3-setuptools
+    Archlinux: python-setuptools
+    RedHat: python3-setuptools
+    Suse: python3-setuptools
+  2:
+    FreeBSD: py27-setuptools
+    Debian: python-setuptools
+    Archlinux: python2-setuptools
+    RedHat: python-setuptools
+    Suse: python-setuptools
+
+root_group:
+  Linux: root
+  FreeBSD: wheel

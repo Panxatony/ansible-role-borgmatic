@@ -1,0 +1,37 @@
+- name: Install directories exist
+  file:
+    path: '{{ item.path }}'
+    state: directory
+    mode: 0755
+    owner: root
+    group: '{{ root_group[ansible_system] }}'
+    setype: '{{ item.setype }}'
+  loop:
+    - path: /root/.local/bin
+      setype: bin_t
+    - path: /root/.local/lib
+      setype: lib_t
+
+- name: borgbackup and pip are installed [Debian/Ubuntu]
+  apt:
+    name:
+    - borgbackup
+    - python3-pip
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+- name: borgbackup and pip are installed [Other]
+  package:
+    name:
+    - '{{ borgmatic_borg_package[ansible_os_family] }}'
+    - '{{ borgmatic_pip_package[ansible_os_family] }}'
+  when: ansible_os_family != "Debian"
+
+- name: pip module requirements are installed
+  package:
+    name: '{{ borgmatic_setuptools_package[ansible_python.version.major][ansible_os_family] }}'
+
+- name: borgmatic is installed
+  pip:
+    executable: '{{ borgmatic_pip_executable[ansible_os_family] }}'
+    name: borgmatic
+    extra_args: "--user"

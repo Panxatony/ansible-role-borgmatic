@@ -1,0 +1,10 @@
+[Unit]
+Description=Dummy Service for testing borgmatic_required_systemd_units funcionality
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

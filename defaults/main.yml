@@ -1,0 +1,71 @@
+# Path under which the borgmatic config will be saved
+borgmatic_config_dir: /etc/borgmatic
+
+# Set the encryption mode for the repositories. See
+# https://borgbackup.readthedocs.io/en/stable/usage/init.html#encryption-modes
+# for a list of available options
+borgmatic_encryption_mode: repokey
+
+# Path for the borgmatic ssh keys used to connect to remote repositories
+borgmatic_sshkey_dir: /root/.ssh_borgmatic
+
+# The borgmatic config to deploy to the remote system. This key is equivalent to the borgmatic
+# config reference fond here: https://torsion.org/borgmatic/docs/reference/configuration/
+# If you would like to load a file from disk instead, you can do so like this:
+# borgmatic_config: '{{ lookup("file", "/path/to/file.yaml") | from_json }}'
+borgmatic_config:
+  location:
+    repositories:
+    - /var/borg-backup
+    source_directories:
+    - /etc
+    - /home
+    #one_file_system: true
+    #atime: false
+  storage:
+    encryption_passphrase: mypassword
+    # !WARNING! If you want to change the SSH command, make sure to include the path to
+    # the borgmatic SSH key as shown below, else creating backups on remote hosts might fail
+    ssh_command: 'ssh -i {{ borgmatic_sshkey_dir }}/id_rsa -o StrictHostKeyChecking=no'
+    #relocated_repo_access_is_ok: true
+    ##compression: zlib,6
+  retention:
+    keep_daily: 7
+    keep_weekly: 4
+    keep_monthly: 6
+  #consistency:
+    #checks:
+    #  - repository
+    #  - archives
+  hooks:
+    on_error:
+      - mail -s "Backup on $hostname failed!" root@localhost
+
+# --- Backup task options ---
+# Optionally run a backup right after deploying
+borgmatic_backup_now: no
+# List of systemd units that the backup tasks requires. For example, if the repository is on a remote server
+# and mounted via NFS/CIFS, you can use a systemd mount unit to ensure that the mount is actually active
+# whenever the backup job runs.
+#
+# Has no effect on non-systemd hosts (e.g. FreeBSD)
+borgmatic_required_systemd_units: []
+  #- var-backups.mount
+  #- some-other-app.service
+
+
+
+# --- Scheduling Options --
+# Schedule the time at which the backup should be run
+# _linux uses systemd-timer OnDate style notation (https://www.freedesktop.org/software/systemd/man/systemd.time.html#)
+# (weekday) year-month-day hour:minute:second
+borgmatic_schedule_linux: "*-*-* 2:0:0"
+# _freebsd uses cron-like notation
+# minute hour day month weekday
+borgmatic_schedule_freebsd:
+  minute: "0"
+  hour: "2"
+  day: "*"
+  weekday: "*"
+  month: "*"
+
