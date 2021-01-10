@@ -6,6 +6,9 @@ borgmatic_borg_package:
   Archlinux: borgbackup
   Suse: borgbackup
 
+borgmatic_borgmatic_package:
+  FreeBSD: py37-borgmatic
+
 borgmatic_pip_package:
   FreeBSD: py37-pip
   RedHat: python3-pip
