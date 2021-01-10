@@ -24,14 +24,17 @@
     name:
     - '{{ borgmatic_borg_package[ansible_os_family] }}'
     - '{{ borgmatic_pip_package[ansible_os_family] }}'
+    - '{{ borgmatic_borgmatic_package[ansible_os_family] }}'    
   when: ansible_os_family != "Debian"
 
 - name: pip module requirements are installed
   package:
     name: '{{ borgmatic_setuptools_package[ansible_python.version.major][ansible_os_family] }}'
+  when: ansible_os_family == "Debian"
 
 - name: borgmatic is installed
   pip:
     executable: '{{ borgmatic_pip_executable[ansible_os_family] }}'
     name: borgmatic
     extra_args: "--user"
+  when: ansible_os_family == "Debian"
