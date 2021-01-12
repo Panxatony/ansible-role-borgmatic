@@ -39,3 +39,7 @@ borgmatic_setuptools_package:
 root_group:
   Linux: root
   FreeBSD: wheel
+
+borgmatic_bin:
+  Linux: root/.local/bin
+  FreeBSD: /usr/local/bin
