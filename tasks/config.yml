@@ -15,7 +15,7 @@
     mode: 0600
 
 - name: Verify configuration file
-  command: /root/.local/bin/validate-borgmatic-config -c '{{ borgmatic_config_dir }}/config.yaml'
+  command: '{{ borgmatic_bin[ansible_system] }}/validate-borgmatic-config -c {{ borgmatic_config_dir }}/config.yaml'
   changed_when: no
 
 - block:
